@@ -1,3 +1,5 @@
+import pickle
+
 import pygame
 import random
 import os
@@ -157,9 +159,9 @@ class Base:
         win.blit(self.IMG, (self.x2, self.y))
 
 
-def blitRotateCenter(surf, image, topleft, angle):
+def blitRotateCenter(surf, image, top_left, angle):
     rotated_image = pygame.transform.rotate(image, angle)
-    new_rect = rotated_image.get_rect(center = image.get_rect(topleft = topleft).center)
+    new_rect = rotated_image.get_rect(center = image.get_rect(topleft = top_left).center)
 
     surf.blit(rotated_image, new_rect.topleft)
 
@@ -192,7 +194,6 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
 
     pygame.display.update()
 
-
 def eval_genomes(genomes, config):
     global WIN, gen
     win = WIN
@@ -223,7 +224,6 @@ def eval_genomes(genomes, config):
                 run = False
                 pygame.quit()
                 quit()
-                break
 
         pipe_ind = 0
         if len(birds) > 0:
@@ -275,10 +275,9 @@ def eval_genomes(genomes, config):
                 birds.pop(birds.index(bird))
 
         draw_window(WIN, birds, pipes, base, score, gen, pipe_ind)
-        '''if score > 20:
+        if score > 20:
             pickle.dump(nets[0],open("best.pickle", "wb"))
-            break'''
-
+            break
 
 def run(config_file):
     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
@@ -294,7 +293,6 @@ def run(config_file):
     winner = p.run(eval_genomes, 100000)
     print(1)
     print('\nBest genome:\n{!s}'.format(winner))
-
 
 if __name__ == '__main__':
     local_dir = os.path.dirname(__file__)
