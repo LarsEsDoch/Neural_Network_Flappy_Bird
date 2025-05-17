@@ -4,6 +4,7 @@ import pygame
 import random
 import os
 import neat
+
 pygame.font.init()
 
 WIN_WIDTH = 600
@@ -11,17 +12,17 @@ WIN_HEIGHT = 800
 FLOOR = 730
 STAT_FONT = pygame.font.SysFont("comicsans", 50)
 END_FONT = pygame.font.SysFont("comicsans", 70)
-DRAW_LINES = False
+DEBUG = True
 
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 pygame.display.set_caption("Flappy Bird")
 
 pipe_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","pipe.png")).convert_alpha())
 bg_img = pygame.transform.scale(pygame.image.load(os.path.join("imgs","bg.png")).convert_alpha(), (600, 900))
-bird_images = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird" + str(x) + ".png"))) for x in range(1,4)]
+bird_images = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird" + str(x) + ".png"))).convert_alpha() for x in range(1,4)]
 base_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","base.png")).convert_alpha())
 
-gen = 0
+generation = 0
 
 class Bird:
     MAX_ROTATION = 25
@@ -88,8 +89,7 @@ class Bird:
     def get_mask(self):
         return pygame.mask.from_surface(self.img)
 
-
-class Pipe():
+class Pipe:
     GAP = 200
     VEL = 5
 
@@ -119,8 +119,7 @@ class Pipe():
         win.blit(self.PIPE_TOP, (self.x, self.top))
         win.blit(self.PIPE_BOTTOM, (self.x, self.bottom))
 
-
-    def collide(self, bird, win):
+    def collide(self, bird):
         bird_mask = bird.get_mask()
         top_mask = pygame.mask.from_surface(self.PIPE_TOP)
         bottom_mask = pygame.mask.from_surface(self.PIPE_BOTTOM)
@@ -132,7 +131,6 @@ class Pipe():
 
         if b_point or t_point:
             return True
-
         return False
 
 class Base:
@@ -158,7 +156,6 @@ class Base:
         win.blit(self.IMG, (self.x1, self.y))
         win.blit(self.IMG, (self.x2, self.y))
 
-
 def blitRotateCenter(surf, image, top_left, angle):
     rotated_image = pygame.transform.rotate(image, angle)
     new_rect = rotated_image.get_rect(center = image.get_rect(topleft = top_left).center)
@@ -175,7 +172,7 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
 
     base.draw(win)
     for bird in birds:
-        if DRAW_LINES:
+        if DEBUG:
             try:
                 pygame.draw.line(win, (255,0,0), (bird.x+bird.img.get_width()/2, bird.y + bird.img.get_height()/2), (pipes[pipe_ind].x + pipes[pipe_ind].PIPE_TOP.get_width()/2, pipes[pipe_ind].height), 5)
                 pygame.draw.line(win, (255,0,0), (bird.x+bird.img.get_width()/2, bird.y + bird.img.get_height()/2), (pipes[pipe_ind].x + pipes[pipe_ind].PIPE_BOTTOM.get_width()/2, pipes[pipe_ind].bottom), 5)
@@ -195,9 +192,9 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
     pygame.display.update()
 
 def eval_genomes(genomes, config):
-    global WIN, gen
+    global WIN, generation
     win = WIN
-    gen += 1
+    generation += 1
 
     nets = []
     birds = []
@@ -215,13 +212,13 @@ def eval_genomes(genomes, config):
 
     clock = pygame.time.Clock()
 
-    run = True
-    while run and len(birds) > 0:
-        clock.tick(120)
+    running = True
+    while running and len(birds) > 0:
+        clock.tick(60)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                running = False
                 pygame.quit()
                 quit()
 
@@ -246,7 +243,7 @@ def eval_genomes(genomes, config):
         for pipe in pipes:
             pipe.move()
             for bird in birds:
-                if pipe.collide(bird, win):
+                if pipe.collide(bird):
                     ge[birds.index(bird)].fitness -= 1
                     nets.pop(birds.index(bird))
                     ge.pop(birds.index(bird))
@@ -274,15 +271,15 @@ def eval_genomes(genomes, config):
                 ge.pop(birds.index(bird))
                 birds.pop(birds.index(bird))
 
-        draw_window(WIN, birds, pipes, base, score, gen, pipe_ind)
-        if score > 20:
+        draw_window(WIN, birds, pipes, base, score, generation, pipe_ind)
+        if score > 2000:
             pickle.dump(nets[0],open("best.pickle", "wb"))
             break
 
 def run(config_file):
     config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction,
-                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
-                         config_file)
+                                neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                                config_file)
 
     p = neat.Population(config)
 
