@@ -17,10 +17,10 @@ DEBUG = True
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 pygame.display.set_caption("Flappy Bird")
 
-pipe_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","pipe.png")).convert_alpha())
-bg_img = pygame.transform.scale(pygame.image.load(os.path.join("imgs","bg.png")).convert_alpha(), (600, 900))
+pipe_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","pipe.png")).convert_alpha()).convert_alpha()
+bg_img = pygame.transform.scale(pygame.image.load(os.path.join("imgs","bg.png")).convert_alpha(), (600, 900)).convert_alpha()
 bird_images = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird" + str(x) + ".png"))).convert_alpha() for x in range(1,4)]
-base_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","base.png")).convert_alpha())
+base_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","base.png")).convert_alpha()).convert_alpha()
 
 generation = 0
 
@@ -193,7 +193,6 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
 
 def eval_genomes(genomes, config):
     global WIN, generation
-    win = WIN
     generation += 1
 
     nets = []
@@ -214,7 +213,7 @@ def eval_genomes(genomes, config):
 
     running = True
     while running and len(birds) > 0:
-        clock.tick(60)
+        clock.tick(600)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
