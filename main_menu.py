@@ -29,11 +29,11 @@ class Button:
 
 def show_menu(win):
     buttons = [
-        Button(150, 200, 300, 60, "Play Solo", (70, 130, 180), (90, 150, 200)),
-        Button(150, 280, 300, 60, "Play vs AI", (70, 130, 180), (90, 150, 200)),
-        Button(150, 360, 300, 60, "Train AI", (70, 130, 180), (90, 150, 200)),
-        Button(150, 440, 300, 60, "Train AI (Visualized)", (70, 130, 180), (90, 150, 200)),
-        Button(150, 520, 300, 60, "Quit", (180, 70, 70), (200, 90, 90))
+        Button(150, 260, 300, 60, "Play Solo", (70, 130, 180), (90, 150, 200)),
+        Button(150, 340, 300, 60, "Play vs AI", (70, 130, 180), (90, 150, 200)),
+        Button(150, 420, 300, 60, "Train AI", (70, 130, 180), (90, 150, 200)),
+        Button(90, 500, 420, 60, "Train AI (Visualized)", (70, 130, 180), (90, 150, 200)),
+        Button(225, 580, 150, 60, "Quit", (180, 70, 70), (200, 90, 90))
     ]
 
     running = True
@@ -61,12 +61,17 @@ def show_menu(win):
 
         win.blit(bg_img, (0, 0))
 
+        dark_overlay = pygame.Surface(bg_img.get_size()).convert_alpha()
+        dark_overlay.fill((0, 0, 0, 50))
+
+        win.blit(dark_overlay, (0, 0))
+
         title = END_FONT.render("Flappy Bird AI", 1, (255, 255, 255))
-        win.blit(title, (WIN_WIDTH // 2 - title.get_width() // 2, 80))
+        win.blit(title, (WIN_WIDTH // 2 - title.get_width() // 2, 50))
 
         high_score = load_highscore()
-        high_text = MENU_FONT.render(f"High Score: {high_score}", 1, (255, 215, 0))
-        win.blit(high_text, (WIN_WIDTH // 2 - high_text.get_width() // 2, 140))
+        high_text = MENU_FONT.render(f"Human High Score: {high_score}", 1, (255, 215, 0))
+        win.blit(high_text, (WIN_WIDTH // 2 - high_text.get_width() // 2, 160))
 
         for button in buttons:
             button.draw(win)
