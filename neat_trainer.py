@@ -45,18 +45,15 @@ def draw_training_window(win, birds, pipes, base, score, gen, pipe_ind, nets=Non
     alive_label = STAT_FONT.render("Alive: " + str(len(birds)), 1, (255, 255, 255))
     win.blit(alive_label, (10, 50))
 
-    # Draw neural network visualization if enabled and we have birds
     if show_viz and nets and len(birds) > 0 and len(pipes) > 0:
         bird = birds[0]
         net = nets[0]
         inputs = (bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom))
 
-        # Draw semi-transparent background for viz
         viz_surface = pygame.Surface((400, 700), pygame.SRCALPHA)
         viz_surface.fill((0, 0, 0, 180))
         win.blit(viz_surface, (WIN_WIDTH, 50))
 
-        # Extend window temporarily to show viz
         extended_win = pygame.display.set_mode((WIN_WIDTH + 400, WIN_HEIGHT))
         extended_win.blit(win, (0, 0))
         draw_neural_network(extended_win, net, inputs)
