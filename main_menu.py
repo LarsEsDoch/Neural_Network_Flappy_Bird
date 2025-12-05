@@ -76,7 +76,7 @@ def show_menu(win):
         for button in buttons:
             button.draw(win)
 
-        controls_font = pygame.font.SysFont("comicsans", 20)
+        controls_font = pygame.font.SysFont(None, 20)
         controls = controls_font.render("Press SPACE to jump | ESC to return to menu", 1, (200, 200, 200))
         win.blit(controls, (WIN_WIDTH // 2 - controls.get_width() // 2, 700))
 

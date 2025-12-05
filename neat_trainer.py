@@ -11,9 +11,10 @@ from config import *
 generation = 0
 
 
-def draw_training_window(win, birds, pipes, base, score, gen, pipe_ind, nets=None, show_viz=False):
+def draw_training_window(win, birds, pipes, base, score, gen, pipe_ind, genomes=None, ge_list=None, show_viz=False):
     if gen == 0:
         gen = 1
+
     win.blit(bg_img, (0, 0))
 
     for pipe in pipes:
@@ -22,7 +23,7 @@ def draw_training_window(win, birds, pipes, base, score, gen, pipe_ind, nets=Non
     base.draw(win)
 
     for bird in birds:
-        if DEBUG:
+        if DEBUG and len(pipes) > 0:
             try:
                 pygame.draw.line(win, (255, 0, 0),
                                  (bird.x + bird.img.get_width() / 2, bird.y + bird.img.get_height() / 2),
@@ -45,25 +46,38 @@ def draw_training_window(win, birds, pipes, base, score, gen, pipe_ind, nets=Non
     alive_label = STAT_FONT.render("Alive: " + str(len(birds)), 1, (255, 255, 255))
     win.blit(alive_label, (10, 50))
 
-    if show_viz and nets and len(birds) > 0 and len(pipes) > 0:
-        bird = birds[0]
-        net = nets[0]
-        inputs = (bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom))
+    if show_viz:
+        viz_surface = pygame.Surface((400, WIN_HEIGHT))
+        viz_surface.fill((30, 30, 30))
+        win.blit(viz_surface, (WIN_WIDTH, 0))
 
-        viz_surface = pygame.Surface((400, 700), pygame.SRCALPHA)
-        viz_surface.fill((0, 0, 0, 180))
-        win.blit(viz_surface, (WIN_WIDTH, 50))
+        pygame.draw.line(win, (100, 100, 100), (WIN_WIDTH, 0), (WIN_WIDTH, WIN_HEIGHT), 3)
 
-        extended_win = pygame.display.set_mode((WIN_WIDTH + 400, WIN_HEIGHT))
-        extended_win.blit(win, (0, 0))
-        draw_neural_network(extended_win, net, inputs)
-
-        title_font = pygame.font.SysFont("comicsans", 24)
+        title_font = pygame.font.SysFont(None, 24)
         title = title_font.render("Neural Network", 1, (255, 255, 255))
-        extended_win.blit(title, (WIN_WIDTH + 200 - title.get_width() // 2, 20))
+        win.blit(title, (WIN_WIDTH + 200 - title.get_width() // 2, 20))
 
-        pygame.display.update()
-        return
+        if genomes and ge_list and len(birds) > 0 and len(pipes) > 0:
+            try:
+                bird = birds[0]
+                genome = ge_list[0]
+                inputs = (bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom))
+                draw_neural_network(win, genome, genomes, inputs, x_offset=WIN_WIDTH + 50, y_offset=50)
+
+                info_font = pygame.font.SysFont(None, 16)
+                info_text = info_font.render("Watching best bird", 1, (200, 200, 200))
+                win.blit(info_text, (WIN_WIDTH + 200 - info_text.get_width() // 2, 750))
+            except (IndexError, Exception) as e:
+                info_font = pygame.font.SysFont(None, 18)
+                msg = info_font.render("Waiting for pipes...", 1, (200, 200, 200))
+                win.blit(msg, (WIN_WIDTH + 200 - msg.get_width() // 2, 400))
+        else:
+            info_font = pygame.font.SysFont(None, 18)
+            if len(birds) == 0:
+                msg = info_font.render("No birds alive", 1, (200, 200, 200))
+            else:
+                msg = info_font.render("Initializing...", 1, (200, 200, 200))
+            win.blit(msg, (WIN_WIDTH + 200 - msg.get_width() // 2, 400))
 
     pygame.display.update()
 
@@ -89,7 +103,9 @@ def eval_genomes(genomes, config, show_viz=False):
     clock = pygame.time.Clock()
     running = True
 
-    win = pygame.display.set_mode((WIN_WIDTH + (400 if show_viz else 0), WIN_HEIGHT))
+    window_width = WIN_WIDTH + (400 if show_viz else 0)
+    win = pygame.display.set_mode((window_width, WIN_HEIGHT))
+    pygame.display.set_caption("Flappy Bird AI - Training" + (" (Visualized)" if show_viz else ""))
 
     while running and len(birds) > 0:
         clock.tick(30)
@@ -104,7 +120,7 @@ def eval_genomes(genomes, config, show_viz=False):
                 return
 
         pipe_ind = 0
-        if len(birds) > 0:
+        if len(birds) > 0 and len(pipes) > 0:
             if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].PIPE_TOP.get_width():
                 pipe_ind = 1
 
@@ -112,12 +128,15 @@ def eval_genomes(genomes, config, show_viz=False):
             ge[x].fitness += 0.1
             bird.move()
 
-            output = nets[birds.index(bird)].activate((bird.y,
-                                                       abs(bird.y - pipes[pipe_ind].height),
-                                                       abs(bird.y - pipes[pipe_ind].bottom)))
-
-            if output[0] > 0.5:
-                bird.jump()
+            if len(pipes) > 0:
+                try:
+                    output = nets[birds.index(bird)].activate((bird.y,
+                                                               abs(bird.y - pipes[pipe_ind].height),
+                                                               abs(bird.y - pipes[pipe_ind].bottom)))
+                    if output[0] > 0.5:
+                        bird.jump()
+                except IndexError:
+                    pass
 
         base.move()
 
@@ -125,17 +144,23 @@ def eval_genomes(genomes, config, show_viz=False):
         add_pipe = False
         for pipe in pipes:
             pipe.move()
+
+            birds_to_remove = []
             for bird in birds:
                 if pipe.collide(bird):
-                    ge[birds.index(bird)].fitness -= 1
-                    nets.pop(birds.index(bird))
-                    ge.pop(birds.index(bird))
-                    birds.pop(birds.index(bird))
+                    birds_to_remove.append(bird)
+
+            for bird in birds_to_remove:
+                bird_idx = birds.index(bird)
+                ge[bird_idx].fitness -= 1
+                nets.pop(bird_idx)
+                ge.pop(bird_idx)
+                birds.pop(bird_idx)
 
             if pipe.x + pipe.PIPE_TOP.get_width() < 0:
                 rem.append(pipe)
 
-            if not pipe.passed and pipe.x < bird.x:
+            if not pipe.passed and len(birds) > 0 and pipe.x < birds[0].x:
                 pipe.passed = True
                 add_pipe = True
 
@@ -148,16 +173,22 @@ def eval_genomes(genomes, config, show_viz=False):
         for r in rem:
             pipes.remove(r)
 
+        birds_to_remove = []
         for bird in birds:
             if bird.y + bird.img.get_height() - 10 >= FLOOR or bird.y < -50:
-                nets.pop(birds.index(bird))
-                ge.pop(birds.index(bird))
-                birds.pop(birds.index(bird))
+                birds_to_remove.append(bird)
 
-        draw_training_window(win, birds, pipes, base, score, generation, pipe_ind, nets, show_viz)
+        for bird in birds_to_remove:
+            bird_idx = birds.index(bird)
+            nets.pop(bird_idx)
+            ge.pop(bird_idx)
+            birds.pop(bird_idx)
+
+        draw_training_window(win, birds, pipes, base, score, generation, pipe_ind, config, ge, show_viz)
 
         if score > 2000:
-            pickle.dump(nets[0], open("best.pickle", "wb"))
+            if len(nets) > 0:
+                pickle.dump(nets[0], open("best.pickle", "wb"))
             break
 
     pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
