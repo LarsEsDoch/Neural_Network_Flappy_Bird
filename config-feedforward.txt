@@ -3,12 +3,22 @@ fitness_criterion     = max
 fitness_threshold     = 100
 pop_size              = 10
 reset_on_extinction   = False
+no_fitness_termination = False
 
 [DefaultGenome]
 # node activation options
 activation_default      = tanh
 activation_mutate_rate  = 0.0
 activation_options      = tanh
+single_structural_mutation = false
+structural_mutation_surer = default
+bias_init_type = gaussian
+weight_init_type = gaussian
+response_init_type = gaussian
+aggregation_mutate_type = none
+activation_mutate_type = none
+enabled_rate_to_true_add = 0.0
+enabled_rate_to_false_add = 0.0
 
 # node aggregation options
 aggregation_default     = sum
@@ -69,6 +79,7 @@ weight_replace_rate     = 0.1
 [DefaultSpeciesSet]
 compatibility_threshold = 3.0
 
+
 [DefaultStagnation]
 species_fitness_func = max
 max_stagnation       = 20
@@ -77,3 +88,4 @@ species_elitism      = 2
 [DefaultReproduction]
 elitism            = 2
 survival_threshold = 0.2
+min_species_size = 1
