@@ -17,4 +17,4 @@ bg_img = pygame.transform.scale(pygame.image.load(os.path.join("imgs","bg.png"))
 bird_images = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","bird" + str(x) + ".png"))).convert_alpha() for x in range(1,4)]
 base_img = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs","base.png")).convert_alpha()).convert_alpha()
 
-HIGH_SCORE_FILE = "highscore.txt"
+HIGH_SCORE_FILE = "highscores.txt"
