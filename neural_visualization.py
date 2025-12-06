@@ -2,7 +2,7 @@ import pygame
 import neat
 
 
-def draw_neural_network(win, genome, config, inputs, x_offset=650, y_offset=50):
+def draw_neural_network(win, genome, config, inputs, x_offset=650, y_offset=50, horizontal_spacing=150):
     if not genome or not config:
         return
 
@@ -14,15 +14,13 @@ def draw_neural_network(win, genome, config, inputs, x_offset=650, y_offset=50):
         if node_id not in input_nodes and node_id not in output_nodes:
             hidden_nodes.append(node_id)
 
-
     hidden_nodes.sort()
 
     node_radius = 15
-    layer_spacing = 100
-    node_spacing = 45
+    layer_spacing = horizontal_spacing
+    node_spacing = 60
 
     node_positions = {}
-
 
     layers = organize_into_layers(genome, input_nodes, output_nodes, hidden_nodes)
 
@@ -65,8 +63,12 @@ def draw_neural_network(win, genome, config, inputs, x_offset=650, y_offset=50):
 
         mid_x = (from_pos[0] + to_pos[0]) // 2
         mid_y = (from_pos[1] + to_pos[1]) // 2
-        weight_font = pygame.font.SysFont(None, 9)
+        weight_font = pygame.font.SysFont(None, 12)
         weight_text = weight_font.render(f"{weight:.1f}", 1, (180, 180, 180))
+
+        bg_rect = weight_text.get_rect(center=(mid_x, mid_y - 10))
+        bg_rect.inflate_ip(4, 2)
+        pygame.draw.rect(win, (40, 40, 40), bg_rect)
         win.blit(weight_text, (mid_x - weight_text.get_width() // 2, mid_y - 10))
 
     for node_id, pos in node_positions.items():
@@ -84,10 +86,9 @@ def draw_neural_network(win, genome, config, inputs, x_offset=650, y_offset=50):
             color = (100, 100, 100)
 
         pygame.draw.circle(win, color, pos, node_radius)
-
         pygame.draw.circle(win, (255, 255, 255), pos, node_radius, 2)
 
-        font = pygame.font.SysFont(None, 11)
+        font = pygame.font.SysFont(None, 13)
         id_text = font.render(str(node_id), 1, (255, 255, 255))
         win.blit(id_text, (pos[0] - id_text.get_width() // 2, pos[1] - id_text.get_height() // 2))
 
@@ -99,30 +100,34 @@ def draw_neural_network(win, genome, config, inputs, x_offset=650, y_offset=50):
         if node_id in node_positions:
             pos = node_positions[node_id]
             label_text = label_font.render(label, 1, (255, 255, 255))
-            win.blit(label_text, (pos[0] - label_text.get_width() - 25, pos[1] - 8))
+            win.blit(label_text, (pos[0] - label_text.get_width() - 30, pos[1] - 8))
 
             if i < len(inputs):
                 value_text = value_font.render(f"{inputs[i]:.0f}", 1, (200, 200, 200))
-                win.blit(value_text, (pos[0] + node_radius + 5, pos[1] - 7))
+                win.blit(value_text, (pos[0] + node_radius + 8, pos[1] - 7))
 
     for node_id in output_nodes:
         if node_id in node_positions:
             pos = node_positions[node_id]
             label_text = label_font.render("Jump", 1, (255, 255, 255))
-            win.blit(label_text, (pos[0] + node_radius + 5, pos[1] - 8))
+            win.blit(label_text, (pos[0] + node_radius + 8, pos[1] - 8))
 
             if node_id in node_values:
                 value_text = value_font.render(f"{node_values[node_id]:.3f}", 1, (200, 200, 200))
-                win.blit(value_text, (pos[0] - value_text.get_width() - 25, pos[1] - 7))
+                win.blit(value_text, (pos[0] - value_text.get_width() - 30, pos[1] - 7))
 
     if hidden_nodes:
         for node_id in hidden_nodes:
             if node_id in node_positions and node_id in node_values:
                 pos = node_positions[node_id]
                 value_text = value_font.render(f"{node_values[node_id]:.2f}", 1, (180, 180, 180))
-                win.blit(value_text, (pos[0] - value_text.get_width() // 2, pos[1] + node_radius + 3))
 
-    layer_font = pygame.font.SysFont(None, 12)
+                bg_rect = value_text.get_rect(center=(pos[0], pos[1] + node_radius + 8))
+                bg_rect.inflate_ip(4, 2)
+                pygame.draw.rect(win, (40, 40, 40), bg_rect)
+                win.blit(value_text, (pos[0] - value_text.get_width() // 2, pos[1] + node_radius + 5))
+
+    layer_font = pygame.font.SysFont(None, 14)
     layer_names = ["Input", "Hidden", "Output"] if len(layers) == 3 else \
         ["Input"] + [f"H{i}" for i in range(1, len(layers) - 1)] + ["Output"] if len(layers) > 3 else \
             ["Input", "Output"]
@@ -132,6 +137,20 @@ def draw_neural_network(win, genome, config, inputs, x_offset=650, y_offset=50):
             x_pos = x_offset + layer_idx * layer_spacing
             layer_text = layer_font.render(name, 1, (150, 150, 150))
             win.blit(layer_text, (x_pos - layer_text.get_width() // 2, y_offset + 70))
+
+    if hasattr(genome, 'fitness') and genome.fitness is not None:
+        fitness_font = pygame.font.SysFont(None, 16)
+        fitness_text = fitness_font.render(f"Fitness: {genome.fitness:.1f}", 1, (255, 215, 0))
+        win.blit(fitness_text, (x_offset, y_offset + 20))
+
+    enabled_connections = sum(1 for conn in genome.connections.values() if conn.enabled)
+    total_connections = len(genome.connections)
+    conn_font = pygame.font.SysFont(None, 14)
+    conn_text = conn_font.render(f"Connections: {enabled_connections}/{total_connections}", 1, (200, 200, 200))
+    win.blit(conn_text, (x_offset, y_offset + 40))
+
+    node_text = conn_font.render(f"Nodes: {len(genome.nodes)} ({len(hidden_nodes)} hidden)", 1, (200, 200, 200))
+    win.blit(node_text, (x_offset, y_offset + 55))
 
 
 def organize_into_layers(genome, input_nodes, output_nodes, hidden_nodes):

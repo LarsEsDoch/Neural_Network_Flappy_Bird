@@ -9,7 +9,11 @@ from neural_visualization import draw_neural_network
 from config import *
 
 generation = 0
-
+cache = {
+    "bird": None,
+    "genome": None,
+    "inputs": (None, None, None)
+}
 
 def draw_training_window(win, birds, pipes, base, score, gen, pipe_ind, genomes=None, ge_list=None, show_viz=False):
     if gen == 0:
@@ -59,18 +63,23 @@ def draw_training_window(win, birds, pipes, base, score, gen, pipe_ind, genomes=
 
         if genomes and ge_list and len(birds) > 0 and len(pipes) > 0:
             try:
-                bird = birds[0]
-                genome = ge_list[0]
-                inputs = (bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom))
-                draw_neural_network(win, genome, genomes, inputs, x_offset=WIN_WIDTH + 50, y_offset=50)
+                bird = cache["bird"] = birds[0]
+                genome = cache["genome"] = ge_list[0]
+                inputs = cache["inputs"] = (bird.y, abs(bird.y - pipes[pipe_ind].height), abs(bird.y - pipes[pipe_ind].bottom))
+                draw_neural_network(win, genome, genomes, inputs, x_offset=WIN_WIDTH + 90, y_offset=50, horizontal_spacing=120)
 
                 info_font = pygame.font.SysFont(None, 16)
                 info_text = info_font.render("Watching best bird", 1, (200, 200, 200))
                 win.blit(info_text, (WIN_WIDTH + 200 - info_text.get_width() // 2, 750))
             except (IndexError, Exception) as e:
-                info_font = pygame.font.SysFont(None, 18)
-                msg = info_font.render("Waiting for pipes...", 1, (200, 200, 200))
-                win.blit(msg, (WIN_WIDTH + 200 - msg.get_width() // 2, 400))
+                genome = cache["genome"]
+                inputs = cache["inputs"]
+                draw_neural_network(win, genome, genomes, inputs, x_offset=WIN_WIDTH + 90, y_offset=50,
+                                    horizontal_spacing=120)
+
+                info_font = pygame.font.SysFont(None, 16)
+                info_text = info_font.render("Watching best bird", 1, (200, 200, 200))
+                win.blit(info_text, (WIN_WIDTH + 200 - info_text.get_width() // 2, 750))
         else:
             info_font = pygame.font.SysFont(None, 18)
             if len(birds) == 0:
